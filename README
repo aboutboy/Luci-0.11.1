@@ -1,0 +1,9 @@
+Modified version of the original Luci0.11.1 
+* Increased theme Toaddir 
+	- The main is to modify the router interface to make it user-friendly, in line with the modern aesthetic. 
+	- Path: luci-0.11.1 \ themes \ todaair 
+* Add modules Todaair 
+As the theme provides the underlying implementation, modify some of the existing system code. 
+	- Path: luci-0.11.1 \ modules \ todaair 
+* Corresponds to modify the translation of documents, located luci-0.11.1 \ po \ zh_CN \ base.po.
+* Other changes please refer to the source code.

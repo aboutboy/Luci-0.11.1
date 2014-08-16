@@ -1,0 +1,494 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2009 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: wifi_join.htm 9327 2012-09-26 17:38:14Z jow $
+
+-%>
+<%-
+    is_scan=luci.http.formvalue("is_scan")
+	------------------------
+    --配置文件操作对象获取--
+    ------------------------
+	cursor=luci.model.uci.cursor()
+	wifi_iface_list={} 
+
+	--获取匿名 type 操作对象
+
+	cursor:foreach("wireless","wifi-iface",
+		function (section)
+			table.insert(wifi_iface_list, section)
+		end)
+	wifi_device_radio0=cursor:get_all("wireless","radio0") --wireless radio0 interface
+	wifi_iface_stacfg={}                                   --wireless sta  interface
+	wifi_iface_apg={}                                      --wireless ap_g Interface
+	network_lan=cursor:get_all("network","lan")            --network lan interface
+	
+    --过滤出 stacfg 与 ap_g 操作对象
+	for k,v in pairs(wifi_iface_list) do
+	if v[".name"] == "stacfg" then
+    wifi_iface_stacfg=v
+	end
+	if  v[".name"] == "ap_g"  then
+	wifi_iface_apg=v
+	end
+	end
+	
+    --------------
+    --表单初始化--
+    --------------
+	router_ip = luci.http.formvalue("router_ip") or network_lan["ipaddr"]  or ""
+
+    ssid_to_join = luci.http.formvalue("join") or network_lan["ipaddr"]  or ""
+
+	channel_width = luci.http.formvalue("channel_width") or wifi_device_radio0["htmode"]  or ""
+
+	wireless_mac_filter = luci.http.formvalue("wireless_mac_filter") or ""
+
+	ssid_to_join = luci.http.formvalue("ssid_to_join") or ""
+
+	join_wireless_channel = luci.http.formvalue("join_wireless_channel") or ""
+
+	join_encryption = luci.http.formvalue("join_encryption") or ""
+
+	access_point_ssid = luci.http.formvalue("access_point_ssid") or ""
+
+	access_wireless_channel = luci.http.formvalue("access_wireless_channel") or ""
+
+	access_encryption = luci.http.formvalue("access_encryption") or ""
+
+
+
+
+
+
+
+
+
+
+
+%>
+<%  if is_scan then %>
+<%-
+--扫描列表获取
+	local sys = require "luci.sys"
+	local utl = require "luci.util"
+
+	local dev = luci.http.formvalue("device")
+	local iw = luci.sys.wifi.getiwinfo(dev)
+
+	if not iw then
+		luci.http.redirect(luci.dispatcher.build_url("admin/network/wireless"))
+		return
+	end
+
+
+	function scanlist(times)
+		local i, k, v
+		local l = { }
+		local s = { }
+
+		for i = 1, times do
+			for k, v in ipairs(iw.scanlist or { }) do
+				if not s[v.bssid] then
+					l[#l+1] = v
+					s[v.bssid] = true
+				end
+			end
+		end
+
+		return l
+	end
+	
+	function send_json_for_ssidList()
+		local packagetable = {}
+		for i,net in ipairs(scanlist(3)) do
+			if net.ssid then
+				local utiltable = {}
+				utiltable["ssid"] = net.ssid
+				utiltable["bssid"] = net.bssid
+				table.insert(packagetable,utiltable)
+			end
+			    
+		end
+		luci.http.write_json(packagetable)
+	end
+	
+	send_json_for_ssidList()
+-%>
+<% end %>
+
+
+
+
+<% if is_scan == nil then %>
+<%+header%>
+<% 
+
+
+function init_selected (list,option_value)
+for k,v in pairs(list) do
+if option_vale == v then 
+write("selected")
+break
+end
+end
+end
+%>
+<div class="cbi-map">
+   
+	<form action="<%=REQUEST_URI%>" method="post">
+	
+		<fieldset class="cbi-section">
+			<legend><%:Local Network / LAN %></legend>
+			<div class="cbi-value">
+				<label class="cbi-value-title" for="router_ip"><%:Router IP %></label>
+				<div class="cbi-value-field">
+					<input type="text" class="cbi-input-text" name="router_ip" id="router_ip" <% if router_ip ~= nil and router_ip ~="" then write("value = "..router_ip) end %> />
+				</div>
+			</div>
+		</fieldset>
+		<fieldset class="cbi-section">
+			<legend><%:Wireless %></legend>
+			<div class="cbi-value">
+				<label class="cbi-value-title" for="channel_width"><%:Channel Width %></label>
+				<div class="cbi-value-field">
+					<select class="cbi-input-select" id="channel_width" name="channel_width" size="1">
+						<option id="channel_width_option1" value="HT20"><%:20MHz %></option>
+						<option id="channel_width_option2" value="HT40-"><%:40MHz 2nd channel below %></option>
+						<option id="channel_width_option3" value="HT40+"><%:40MHz 2nd channel above %></option>
+					</select>
+				</div>
+			</div>
+			<div class="cbi-value">
+				<label class="cbi-value-title" for="wireless_mac_filter"><%:Wireless MAC Filter %></label>
+				<div class="cbi-value-field">
+					<select class="cbi-input-select" id="wireless_mac_filter" name="wireless_mac_filter" size="1">
+						<option id="wireless_mac_filter_option1" value="disable"><%:disable %></option>
+						<option id="wireless_mac_filter_option2" value="allow"><%:Allow listed only %></option>
+						<option id="wireless_mac_filter_option3" value="deny"><%:Allow all except listed %></option>
+					</select>
+				</div>
+			</div>
+			<hr></hr>
+			<div class="cbi-value">
+				<label class="cbi-value-title" for="ssid_to_join"><%:SSID to Join %></label>
+				<div class="cbi-value-field">
+					<select class="cbi-input-select" name="ssid_to_join" id="ssid_to_join" disabled="disabled">
+					<option><%:Please click on the scan %></option>
+					</select>
+					<input type="button" class="cbi-button" name="ssid_to_join_scan" value="<%:scan %>" onclick="hidden_send_post('<%=REQUEST_URI %>', {is_scan:true,device:'radio0'})"/>
+				</div>
+			</div>
+			<div class="cbi-value">
+				<label class="cbi-value-title" for="ssid_to_bssid"><%:BSSID %></label>
+				<div class="cbi-value-field">
+					<input type="text" class="cbi-input-text" name="ssid_to_bssid" id="ssid_to_bssid" disabled="disabled" value="<%:Please click on the scan %>"/>
+				</div>
+			</div>
+			<div class="cbi-value">
+				<label class="cbi-value-title" for="join_wireless_channel"><%:Wireless Channel %></label>
+				<div class="cbi-value-field">
+					<select class="cbi-input-select" id="join_wireless_channel" name="join_wireless_channel" size="1">
+						<option value="1"><%:1 (2.412 GHz) %></option>
+						<option value="2"><%:2 (2.417 GHz) %></option>
+						<option value="3"><%:3 (2.422 GHz) %></option>
+						<option value="4"><%:4 (2.427 GHz) %></option>
+						<option value="5"><%:5 (2.432 GHz) %></option>
+						<option value="6"><%:6 (2.437 GHz) %></option>
+						<option value="7"><%:7 (2.442 GHz) %></option>
+						<option value="8"><%:8 (2.447 GHz) %></option>
+						<option value="9"><%:9 (2.452 GHz) %></option>
+						<option value="10"><%:10 (2.457 GHz) %></option>
+						<option value="11"><%:11 (2.462 GHz) %></option>
+						<option value="auto"><%:auto %></option>
+					</select>
+				</div>
+			</div>
+			<div class="cbi-value">
+				<label class="cbi-value-title" for="join_encryption"><%:Encryption %></label>
+				<div class="cbi-value-field">
+					<select class="cbi-input-select" id="join_encryption" name="join_encryption" size="1" onchange="option_change(this)">
+						<option value="none"><%:No Encryption %></option>
+						<option value="psk"><%:WPA-PSK %></option>
+						<option value="psk2"><%:WPA2-PSK %></option>
+						<option value="psk-mixed"><%:WPA-PSK/WPA2-PSK Mixed Mode %></option>
+					</select>
+				</div>
+			</div>
+			<div class="cbi-value" id="join_key">
+				<label class="cbi-value-title" for="join_key"><%:Key %></label>
+				<div class="cbi-value-field">
+					<input type="text" class="cbi-input-text" name="join_key"/>
+				</div>
+			</div>
+			<hr></hr>
+			<div class="cbi-value">
+				<label class="cbi-value-title" for="access_point_ssid"><%:Access Point SSID %></label>
+				<div class="cbi-value-field">
+					<input type="text" class="cbi-input-text" name="access_point_ssid" id="access_point_ssid"/>
+				</div>
+			</div>
+			<div class="cbi-value">
+				<label class="cbi-value-title" for="access_wireless_channel"><%:Wireless Channel %></label>
+				<div class="cbi-value-field">
+					<select class="cbi-input-select" id="access_wireless_channel" name="access_wireless_channel" size="1">
+						<option value="1"><%:1 (2.412 GHz) %></option>
+						<option value="2"><%:2 (2.417 GHz) %></option>
+						<option value="3"><%:3 (2.422 GHz) %></option>
+						<option value="4"><%:4 (2.427 GHz) %></option>
+						<option value="5"><%:5 (2.432 GHz) %></option>
+						<option value="6"><%:6 (2.437 GHz) %></option>
+						<option value="7"><%:7 (2.442 GHz) %></option>
+						<option value="8"><%:8 (2.447 GHz) %></option>
+						<option value="9"><%:9 (2.452 GHz) %></option>
+						<option value="10"><%:10 (2.457 GHz) %></option>
+						<option value="11"><%:11 (2.462 GHz) %></option>
+						<option value="auto"><%:auto %></option>
+					</select>
+				</div>
+			</div>
+
+			<div class="cbi-value">
+				<label class="cbi-value-title" for="access_encryption"><%:Encryption %></label>
+				<div class="cbi-value-field">
+					<select class="cbi-input-select" id="access_encryption" name="access_encryption" size="1" onchange="option_change(this)">
+						<option value="none"><%:No Encryption %></option>
+						<option value="psk"><%:WPA-PSK %></option>
+						<option value="psk2"><%:WPA2-PSK %></option>
+						<option value="psk-mixed"><%:WPA-PSK/WPA2-PSK Mixed Mode %></option>
+					</select>
+				</div>
+			</div>
+			<div class="cbi-value" id="access_key">
+				<label class="cbi-value-title" for="access_key"><%:Key %></label>
+				<div class="cbi-value-field">
+					<input type="text" class="cbi-input-text" name="access_key"/>
+				</div>
+			</div>
+		</fieldset>
+	</form>
+</div>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript" id="cbip-encryption">
+//ajax表单提交
+function ajaxSubmitForm(form, callbackMethod) 
+{
+    var elements = form.elements;// Enumeration the form elements            
+    var element;            
+    var i;            
+    var postContent = "";// Form contents need to submit           
+	for(i=0;i<elements.length;++i) 
+	{                  
+		var element=elements[i];            
+		if(element.type=="text" || element.type=="textarea" || element.type=="hidden") 
+		{            
+			postContent += encodeURIComponent(element.name) + "=" + encodeURIComponent(element.value) + "&";            
+		}            
+		else 
+		if(element.type=="select-one"||element.type=="select-multiple") 
+		{            
+			var options=element.options,j,item;            
+			for(j=0;j<options.length;++j)
+			{            
+				item=options[j];            
+				if(item.selected) 
+				{                    
+					postContent += encodeURIComponent(element.name) + "=" + encodeURIComponent(item.value) + "&";                            
+				}            
+			}            
+		} 
+		else 
+		{
+			if(element.type=="checkbox"||element.type=="radio") 
+			{            
+				if(element.checked) 
+				{                            
+					postContent += encodeURIComponent(element.name) + "=" + encodeURIComponent(element.value) + "&";                         
+				}                  
+			} 
+			else 
+			{
+				if(element.type=="file") 
+				{                          
+					if(element.value != "") 
+					{                                  
+						postContent += encodeURIComponent(element.name) + "=" + encodeURIComponent(element.value) + "&";                         
+					}                  
+				} 
+				else 
+				{                                  
+					postContent += encodeURIComponent(element.name) + "=" + encodeURIComponent(element.value) + "&";                
+				}
+			}
+		} 
+	}          
+	ajaxSubmit(form.action, form.method, postContent,callbackMethod);            
+}
+function get_ssid_to_bssid_jsonValues(value)
+{
+	var ssid_to_bssid_jsonValues = value;
+	var ssid_to_join = document.getElementById("ssid_to_join");
+	var ssid_to_bssid = document.getElementById("ssid_to_bssid");
+	for(var i=1;i<=ssid_to_bssid_jsonValues.length;i++)
+	{
+		if(ssid_to_join.options[ssid_to_join.selectedIndex].value == ssid_to_bssid_jsonValues[i-1]["ssid"])
+		{
+			ssid_to_bssid.value =ssid_to_bssid_jsonValues[i-1]["bssid"];
+			break;
+		}
+	}
+
+}
+//ssid_to_join注册ssid_to_bssid选择事件
+function add_ssid_to_join_selector(value)
+{
+	get_ssid_to_bssid_jsonValues(value);
+	ssid_to_join.onchange = (function (value){ return function (){get_ssid_to_bssid_jsonValues(value);}})(value);
+}
+//ssid_to_join子元素扫描结果添加
+function callbackMethod_ssid_add_option (obj)
+{
+	var ssid_to_join = document.getElementById("ssid_to_join");
+	//情况所以select下子元素
+	while(ssid_to_join.hasChildNodes()) 
+    {
+        ssid_to_join.removeChild(ssid_to_join.firstChild);
+    }
+	if(obj&&obj.length)
+	{
+		for(var i=1;i<=obj.length;i++)
+		{
+			var option = document.createElement("option");
+			option.innerHTML = obj[i-1]["ssid"];
+			option.setAttribute("value",obj[i-1]["ssid"]);
+
+			ssid_to_join.appendChild(option);
+		}
+		ssid_to_join.removeAttribute("disabled");
+	}
+	else
+		ssid_to_join.setAttribute("disabled","disabled");
+
+}
+//解析json
+function analysisJson(json)
+{
+	return eval(json);
+}
+function ajaxSubmit(url, method, postContent, callbackMethod)
+{            
+           
+	if (window.XMLHttpRequest)
+	{                          
+		xmlhttp=new XMLHttpRequest();             
+	}                  
+	// code for IE               
+	else 
+		if (window.ActiveXObject)
+		{
+			xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");                   
+		}                  
+	if(xmlhttp) 
+	{                     
+		xmlhttp.onreadystatechange = function() 
+		{                                
+			// if xmlhttp shows "loaded"                                
+			if (xmlhttp.readyState==4)
+			{
+				if(callbackMethod) 
+				{
+
+					var ssid_to_bssid_jsonValues = analysisJson(xmlhttp.responseText);
+					
+					callbackMethod(ssid_to_bssid_jsonValues);  
+					add_ssid_to_join_selector(ssid_to_bssid_jsonValues);
+				}                              
+			}                          
+		}                   
+		if(method.toLowerCase() == "get") 
+		{                               
+			xmlhttp.open("GET", url + "?" + postContent, true);                                 
+			xmlhttp.send(null);                       
+		} 
+		else 
+		{
+			if(method.toLowerCase() == "post") 
+			{   
+				xmlhttp.open("POST", url, true);   
+				xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");   
+				xmlhttp.send(postContent);     
+			} 
+		}
+	} 
+       
+}
+function init_selected_option(selected,option){
+	option_list=document.getElementById(selected);
+	
+	for( var op in option_list.options){
+		
+		if( op.value == option ){
+           op.selected = "selected";
+		   
+		   break;
+		}
+	}
+
+}
+
+function option_change(object){
+	if(object.value != "none"){
+		if(object.id=="access_encryption"){
+			document.getElementById("access_key").style.display="block";
+		}
+		else
+		if(object.id=="join_encryption"){
+			document.getElementById("join_key").style.display="block";
+		}
+	}
+	else
+	{
+				if(object.id=="access_encryption"){
+			document.getElementById("access_key").style.display="none";
+		}
+		else
+		if(object.id=="join_encryption"){
+			document.getElementById("join_key").style.display="none";
+		}
+	}
+}
+
+//hidden post 发送
+function hidden_send_post(URL,PARAMS){
+	var temp = document.createElement("form");
+	temp.action = URL;
+	temp.method = "post";
+	temp.style.display = "none";
+	for (var x in PARAMS )
+	{
+		var opt = document.createElement("input");
+		opt.type = "hidden";
+		opt.name = x;
+		opt.value = PARAMS[x];
+		temp.appendChild(opt);
+	}
+	document.body.appendChild(temp);
+	ajaxSubmitForm(temp,callbackMethod_ssid_add_option);
+	//temp.submit();
+	return temp;
+}
+
+option_change(document.getElementById("access_encryption"));
+option_change(document.getElementById("join_encryption"));
+init_selected_option("access_encryption","psk-mixed");
+
+</script>
+<%+footer%>
+<% end %>

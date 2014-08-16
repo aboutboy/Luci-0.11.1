@@ -1,0 +1,52 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2012 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: sysauth.htm 8327 2012-03-04 15:03:05Z jow $
+
+-%>
+
+
+<%+authheader%>
+<form method="post" action="<%=pcdata(luci.http.getenv("REQUEST_URI"))%>">
+	<div class="map-login">
+			<div class="username">
+				<label class="value-title"><%:Username%></label>
+				<div class="value-field">
+					<input class="input-user" type="text" name="username" value="<%=duser%>" />
+				</div>
+			</div>
+			<div class="password">
+				<label class="value-title"><%:Password%></label>&nbsp;&nbsp;
+				<span class="value-field">
+					<input id="focus_password" class="input-password" type="password" name="password" />
+				</span>
+				<span>
+					<input type="submit" value="<%:Login%>" class="login-button" />
+				</span>
+			</div>
+			<div class="map-descr">
+			<%:Please enter your password.Default password is \"admin\".%>
+			<%- if fuser then %>
+			<div class="error"><%:Invalid password! Please try again.%></div>
+			<br />
+			<% end -%>
+		</div>
+	</div>
+
+	
+</form>
+<script type="text/javascript">//<![CDATA[
+	var input = document.getElementById('focus_password');
+	if (input)
+		input.focus();
+//]]></script>
+<%+authfooter%>
+

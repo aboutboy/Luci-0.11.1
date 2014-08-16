@@ -1,0 +1,14 @@
+--[[
+Fast Mode
+ADD 2014-3-13 @Todaair
+]]--
+
+module("luci.controller.admin.fastmode", package.seeall)
+
+function index()
+	entry({"admin", "fast_mode", "ap-wds"}, template("fast_mode/ap-wds"), _("Access Point(WDS)"), 1)
+	entry({"admin", "fast_mode", "repeater"}, template("fast_mode/repeater"), _("Repeater"), 2)
+	entry({"admin", "fast_mode", "repeater-wds"}, template("fast_mode/repeater-wds"), _("Repeater(WDS)"), 3)
+	entry({"admin", "fast_mode", "terminal"}, template("fast_mode/terminal"), _("Terminal"), 4)
+	entry({"admin", "fast_mode", "terminal-wds"}, template("fast_mode/terminal-wds"), _("Terminal(WDS)"), 5)
+end

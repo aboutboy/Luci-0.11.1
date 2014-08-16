@@ -1,0 +1,385 @@
+/* ADD 2014-2-13 @Todaair */
+body {
+	background-image:url('/luci-static/resources/icons/todaair-main-bg.png');
+	margin: 0;
+	/*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 13px;*/
+	font-weight: normal;
+	line-height: 18px;
+	color: #404040;
+	font-size: 13px;
+}
+/*------------login-start-------------------*/
+.logincontainer {
+	width: 960px;
+	padding-top: 75px;
+	margin-left: auto;
+	margin-right: auto;
+	zoom: 1;
+}
+.map-login {
+	width:600px;
+	height:360px;
+	background-image:url('/luci-static/resources/icons/background-login.png');
+	margin: auto;
+	-webkit-border-top-right-radius: 10px;
+	-webkit-border-top-left-radius: 10px;
+	-webkit-border-bottom-right-radius: 10px;
+	-webkit-border-bottom-left-radius: 10px;
+	-moz-border-radius-topright: 10px;
+	-moz-border-radius-topleft: 10px;
+	-moz-border-radius-bottomright: 10px;
+	-moz-border-radius-bottomleft: 10px;
+	border-top-right-radius: 10px;
+	border-top-left-radius: 10px;
+	border-bottom-right-radius: 10px;
+	border-bottom-left-radius: 10px;
+}
+.logincontainer .username{
+	display: none;
+}
+.logincontainer .password{
+	padding-top: 270px;
+	padding-left: 170px;
+}
+.logincontainer .map-descr{
+	text-align: center;
+	margin-top: 12px;
+}
+.logincontainer .error{
+	margin-top: 10px;
+	color: #e66c00;
+}
+.value-field input{
+	display: inline-block;
+	width: 210px;
+	height: 25px;
+	padding: 1px;
+	font-size: 13px;
+	line-height: 18px;
+	color: #808080;
+	border: 1px solid #ccc;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+}
+.login-button{
+	background-position: 6px center, left top;
+	padding-left: 28px;
+	background-image: url('../resources/cbi/apply.gif'), linear-gradient(#ffffff, #ffffff 25%, #e6e6e6);
+	display: inline-block;
+	background-color: #e6e6e6;
+	background-repeat: no-repeat;
+	width: auto;
+	height: 29px;
+	text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75);
+	line-height: normal;
+	border: 1px solid #ccc;
+	border-bottom-color: #bbb;
+	-webkit-border-radius: 4px;
+	cursor: pointer;
+}
+/*------------------login-end-------------------------*/
+/*------------------header-start----------------------*/
+.nav-container{
+	width: 960px;
+	height:65px;
+	margin-left: auto;
+	margin-right: auto;
+	background-color: #333333;
+	zoom: 1;
+}
+.brand {
+	float: left;
+	display: block;
+	height: 45px;
+	padding: 10px 20px;
+}
+.top_menu{
+	float: right;
+	margin-right: 10px;
+	height: 65px;
+}
+.top_menu a{
+	text-decoration:none;
+	color: #FF6600;
+}
+.top_menu a:hover{
+	text-decoration:none;
+	color: #FF0000;
+}
+.spotbar{
+	display: block;
+	text-align: right;
+}
+#autocomplete {
+background-image: url(/luci-static/resources/icons/search.gif);
+background-repeat: no-repeat;
+background-position: 180px;
+}
+.nav-container input{
+	display: inline-block;
+	width: 210px;
+	height: 20px;
+	padding: 4px;
+	font-size: 13px;
+	line-height: 18px;
+	color: #808080;
+	border: 1px solid #ccc;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	margin-top: -8px;
+	margin-bottom: 8px;
+}
+.pipe{
+	color: #BFBFBF
+}
+/*---------------------header-end---------------------*/
+/*---------------------footer-start-------------------*/
+#footer {
+	background-color: #333333;
+	width: 960px;
+	height: 60px;
+	text-align: center;
+	color: #FFF;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: -12px;
+}
+.footer-top {
+	color: #999;
+}
+.bottom_menu {
+	margin-bottom: 5px;
+}
+#footer a {
+	color: #FFF;
+	text-decoration: none;
+}
+/* Add 2014-2-14 @Todaair*/
+/*-----------------------shadow------------------------*/
+#shadow{/* 阴影部分*/
+	height:10px;
+	width: 960px;
+	margin: auto;
+	background-color: #FFF
+}
+/*-----------------------main-start--------------------*/
+.main{
+	margin-left: auto;
+	margin-right: auto;
+}
+a{
+text-decoration:none;
+}
+a:hover{
+text-decoration:none;
+}
+.main{
+background-image:url(/luci-static/resources/img/main-background.png);
+width:960px;
+height:490px;
+}
+/*功能块 a标签统一长宽定义*/
+.function{
+display:block;
+width:120px;
+height:190px;
+}
+.text{
+display:block;
+width:120px;
+text-align:center;
+font-size:20px;
+
+}
+.cloud-plug-in{
+position:absolute;
+margin-left:100px;
+margin-top:300px;
+}
+.cloud-plug-in a .icon{
+display:block;
+background-image:url(/luci-static/resources/img/main-icon.png);
+background-position:left 240px top 0px;
+background-position-x:240px;
+background-position-y:0px;
+width:120px;
+height:120px;
+}
+.cloud-plug-in a:hover .icon{
+zoom:1;
+background-position:left 240px top 120px;
+background-position-x:240px;
+background-position-y:120px;
+}
+
+
+
+.wifi{
+position:absolute;
+margin-left:740px;
+margin-top:40px
+}
+.wifi a .icon{
+display:block;
+background-image:url(/luci-static/resources/img/main-icon.png);
+background-position:left -120px top 0px;
+background-position-x:360px;
+background-position-y:0px;
+width:120px;
+height:120px;
+}
+.wifi a:hover .icon{
+background-position:left -120px top 120px;
+background-position-x:360px;
+background-position-y:120px;
+}
+
+
+.settingwizard{
+position:absolute;
+margin-left:100px;
+margin-top:40px;
+}
+.settingwizard a .icon{
+display:block;
+background-image:url(/luci-static/resources/img/main-icon.png);
+background-position:left 0px top 0px;
+background-position-x:0px;
+background-position-y:0px;
+width:120px;
+height:120px;
+}
+.settingwizard a:hover .icon{
+background-position:left 0px top 120px;
+background-position-x:0px;
+background-position-y:120px;
+}
+
+
+.advancedsettings{
+position:absolute;
+margin-left:740px;
+margin-top:300px;
+}
+.advancedsettings a .icon{
+display:block;
+background-image:url(/luci-static/resources/img/main-icon.png);
+background-position:left -360px top 0px;
+background-position-x:120px;
+background-position-y:0px;
+width:120px;
+height:120px;
+overflow:hidden；
+}
+.advancedsettings a:hover .icon{
+background-position:left -360px top 120px;
+background-position-x:120px;
+background-position-y:120px;
+}
+
+.restart{
+position:absolute;
+margin-left:780px;
+margin-top:330px;
+}
+.lan-eth-light{
+position:absolute;
+margin-left:461px;
+margin-top:229px;
+width:86px;
+height:28px;
+
+}
+.offline{
+margin-left:5px;
+float:left;
+display:block;
+width:36px;
+height:28px;
+background-image:url(/luci-static/todaair/icons/eth-on-2in1.png);
+
+}
+.online{
+margin-left:5px;
+float:left;
+display:block;
+width:36px;
+height:28px;
+background-image:url(/luci-static/todaair/icons/eth-on-2in1.png);
+background-position:left 36px top 0px;
+background-position-x:36px;
+background-position-y:0px;
+}
+.wlan-eth-light{
+position:absolute;
+margin-left:410px;
+margin-top:229px;
+width:41px;
+height:28px;
+}
+.wifi-off{
+display:block;
+position:absolute;
+margin-left:550px;
+margin-top:160px;
+width:68px;
+height:98px;
+background-image:url(/luci-static/resources/img/wifi-center.png);
+}
+.wifi-on{
+display:block;
+position:absolute;
+margin-left:550px;
+margin-top:160px;
+width:68px;
+height:98px;
+background-image:url(/luci-static/resources/img/wifi-center.png);
+background-position:left 70px top 0px;
+background-position-x:70px;
+background-position-y:0px;
+}
+.wifi-off span,.wifi-on span{
+display:block;
+width:68px;
+height:16px;
+padding-top:3px;
+text-align:center;
+
+}
+.wifi-center-off:hover{
+cursor:pointer;
+}
+.line-on-info{
+display:block;
+position:absolute;
+margin-left:384px;
+margin-top:332px;
+width:202px;
+height:28px;
+}
+.restart{
+display:block;
+position:absolute;
+margin-left:338px;
+margin-top:225px;
+width:38px;
+height:38px;
+background-image:url(/luci-static/resources/img/restart.png);
+background-position:left 0px top 0px;
+}
+.restart span{
+display:block;
+width:40px;
+height:18px;
+padding-top:50px;
+padding-left:5px;
+}
+.restart:hover{
+background-position:left 36px top 0px;
+background-position-x:36px;
+background-position-y:0px;
+cursor:pointer;
+}
+/*-----------------------main-end--------------------*/

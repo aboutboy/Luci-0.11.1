@@ -1,0 +1,25 @@
+require("luci.sys")
+
+local nw = require "luci.model.network"
+
+
+arg[1] = arg[1] or ""
+
+m = Map("wireless","Todaair","Todaair index page")
+
+nw.init(m.uci)
+
+local wnet = nw:get_wifinet(arg[1])
+local wdev = wnet and wnet:get_device()
+
+-- redirect to overview page if network does not exist anymore (e.g. after a revert)
+--if not wnet or not wdev then
+--	luci.http.redirect(luci.dispatcher.build_url("admin/network/wireless"))
+--	return
+--end
+
+s = m:section(NamedSection, wnet.sid, "wifi-iface", translate("Interface Configuration"))
+
+s:option("general", Value, "ssid", translate("<abbr title=\"Extended Service Set Identifier\">ESSID</abbr>"))
+
+return m

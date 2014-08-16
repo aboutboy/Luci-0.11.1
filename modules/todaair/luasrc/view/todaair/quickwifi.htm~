@@ -1,0 +1,182 @@
+<%#Add 2014-2-16 @Todaair-%>
+<%
+require("luci.sys")
+local load1, load5, load15 = luci.sys.loadavg()
+
+local hostname = require("luci.sys").hostname()
+local crequest = luci.dispatcher.context.request
+local request  = require("luci.dispatcher").context.path
+local category = request[1]
+local tree     = luci.dispatcher.node()
+local cattree  = category and luci.dispatcher.node(category)
+local node     = luci.dispatcher.context.dispatched
+
+local c = tree
+for i,r in ipairs(request) do
+	if c.nodes and c.nodes[r] then
+		c = c.nodes[r]
+		c._menu_selected = true
+	end
+end
+
+require("luci.i18n").loadc("base")
+require("luci.http").prepare_content("application/xhtml+xml")
+
+-%>
+
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<%=luci.i18n.context.lang%>" lang="<%=luci.i18n.context.lang%>">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<link rel="stylesheet" type="text/css" media="screen" href="<%=media%>/cascade.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="<%=media%>/dashboard.css" />
+<!--[if IE 6]><link rel="stylesheet" type="text/css" media="screen" href="<%=media%>/ie6.css" /><![endif]-->
+<!--[if IE 7]><link rel="stylesheet" type="text/css" media="screen" href="<%=media%>/ie7.css" /><![endif]-->
+<!--[if IE 8]><link rel="stylesheet" type="text/css" media="screen" href="<%=media%>/ie8.css" /><![endif]-->
+<% if node and node.css then %><link rel="stylesheet" type="text/css" media="screen" href="<%=resource%>/<%=node.css%>" />
+<% end -%>
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript" src="<%=media%>/artDialog.js"></script>
+<title><%=striptags( hostname .. ( (node and node.title) and ' - ' .. translate(node.title) or '')) %> - LuCI</title>
+</head>
+<body class="lang_<%=luci.i18n.context.lang%>">
+<div id="screen">
+<div id="maincontent" style="margin-top:20px">
+
+
+<form method="post" action="<%=REQUEST_URI%>" enctype="multipart/form-data">
+	<%
+		local uci = luci.model.uci.cursor()
+		local ssid,mode,encryption,key,disabled
+		uci:load("wireless")
+		ssid=uci:get_first("wireless","wifi-iface","ssid")
+		encryption=uci:get_first("wireless","wifi-iface","encryption")
+		key=uci:get_first("wireless","wifi-iface","key")
+		disabled=uci:get_first("wireless","wifi-device","disabled") or uci:get_first("wireless","wifi-iface","disabled")
+
+		function default_sel(value)
+			local sel=nil;
+			if  value == encryption  then
+				sel = "\"selected\""
+			end 
+			return sel
+		end
+		function default_sel1(value)
+			local sel=nil;
+			if value == encryption then
+				sel = "selected="
+			end 
+			return sel
+		end
+		
+%>
+	<script type="text/javascript" src="/luci-static/resources/cbi.js"></script>
+	<div class="cbi-map" id="cbi-quickwifi">
+	<div class="cbi-value" id="cbi-quickwifi-ssid"><label class="cbi-value-title" for="cbid.quickwifi.ssid"><%:SSID%></label>
+			<div class="cbi-value-field">
+			<input type="text" class="cbi-input-text" onchange="cbi_d_update(this.id)" name="cbid.quickwifi.ssid" id="cbid.quickwifi.ssid" value="<%=ssid%>" />
+			</div>
+	</div>
+	
+	<div class="cbi-value" id="cbi-wireless-toggle">
+		<label class="cbi-value-title" for="cbid.wireless.toggle">
+			<%if disabled=="0" then%>
+				<%:Wireless network is enabled%>
+			<%elseif disabled=="1" then%>
+				<%:Wireless network is disabled%>
+			<%end%>
+		</label>
+		<div class="cbi-value-field">
+		<%if disabled == "0" then%>
+			<input class="cbi-button cbi-input-reset" title="<%:Shutdown this network%>" onclick="wifi_change()" type="button" name="cbid.wireless.radio0.__toggle" id="cbid.wireless.radio0.disable" value="<%:Disable%>" />
+		<%elseif disabled == "1" then%>
+			<input class="cbi-button cbi-input-apply" title="<%:Activate this network%>" onclick="wifi_change()" type="button" name="cbid.wireless.radio0.__toggle" id="cbid.wireless.radio0.disable" value="<%:Enable%>" />
+		<%end%>
+		</div>
+	</div>
+
+	<div class="cbi-value" id="cbi-quickwifi-encryption"><label class="cbi-value-title" for="cbid.quickwifi.encryption"><%:encryption%></label>
+			<div class="cbi-value-field">
+
+			<select class="cbi-input-select" onchange="check_key()" id="cbid.quickwifi.encryption" name="cbid.quickwifi.encryption" size="1">
+			<option id="cbi-quickwifi-encryption-none" value="none"  <%=default_sel1("none")%><%=default_sel("none")%> ><%:none%></option>
+			<option id="cbi-quickwifi-encryption-psk2" value="psk2" <%=default_sel1("psk2")%><%=default_sel("psk2")%> ><%:WPA2 PSK%></option>
+			</select>
+
+			</div>
+	</div>
+
+	<div class="cbi-value" id="cbi-quickwifi-key"><label class="cbi-value-title" for="cbid.quickwifi.key"><%:Key%></label>
+		<div class="cbi-value-field">
+			<input type="password" class="cbi-input-text" onchange="cbi_d_update(this.id)" name="cbid.quickwifi.key" id="cbid.quickwifi.key" value="<%=key%>" />
+		</div>
+	</div>
+
+	<div class="cbi-value" id="cbi-quickwifi-show-key"><label class="cbi-value-title" for="cbid.quickwifi.show.key"><%:Show Password%></label>
+		<div class="cbi-value-field">
+			<input type="checkbox" class="cbi-input-text" onclick="var e = document.getElementById('cbid.quickwifi.key'); e.type = (e.type=='password') ? 'text' : 'password';" name="cbid.quickwifi.show.key" id="cbid.quickwifi.show.key" />
+		</div>
+	</div>
+
+	<div class="cbi-value" id="cbi-quickwifi-tip">
+			<%:Tips%>:<%:Modify configuration need to restart to work.%><a href="#" click="restart()"><%:Restart now!%></a>
+	</div>
+
+	<br/><br/>
+	<div class="cbi-page-actions">
+		<input class="cbi-button cbi-button-apply" type="submit" value="<%:Save%>" style="float: right;margin-top:-20px" />
+	</div>
+	</div>
+
+
+
+	<script text="text/javascript">
+		function restart(){
+			XHR.get('<%=luci.dispatcher.build_url("admin", "system_reboot")%>',null,function (){})		
+		}
+		function check_key(){
+			var cbi_encryption=document.getElementById("cbid.quickwifi.encryption");
+			var div_cbi_key=document.getElementById("cbi-quickwifi-key");
+			var div_cbi_show_key=document.getElementById("cbi-quickwifi-show-key");
+			if(cbi_encryption.options[cbi_encryption.selectedIndex].value=="none"){
+				div_cbi_key.style.display="none";
+				div_cbi_show_key.style.display="none";
+			}
+			else{
+				div_cbi_key.style.display="";
+				div_cbi_show_key.style.display="";
+			}
+		}
+		check_key();
+		function wifi_change() {
+			var change_status = document.getElementById("cbid.wireless.radio0.disable");
+			var id="radio0.network1";
+			var reconnect = (<%=disabled%> == 0 ? 0 : 1);
+			XHR.get('<%=luci.dispatcher.build_url("admin", "network")%>/wireless_' + (reconnect ? 'reconnect' : 'shutdown') + '/' + id, null,
+				function(x)
+				{
+					if(reconnect)
+					{
+						change_status.className = 'cbi-button cbi-input-apply';
+						change_status.title = '<%:Activate this network%>';
+						change_status.value="<%:Enable%>";
+					}
+					else
+					{
+						change_status.className = 'cbi-button cbi-input-reset';
+						change_status.title = '<%:Shutdown this network%>';
+						change_status.value="<%:Disable%>";
+
+					}
+					dialog.close();
+				}
+			);
+		};
+	</script>
+</form>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<%+header%>
+
+<h2><a id="content" name="content"><%:Access Point(WDS) mode%></a></h2>
+<br />
+
+<form method="post" action="<%=REQUEST_URI%>" enctype="multipart/form-data">
+	<div><script type="text/javascript" src="/luci-static/resources/cbi.js"></script></div>
+	<div class="cbi-map" id="cbi-network">
+		<fieldset class="cbi-section" id="cbi-network-wan">
+			<legend><%:Local Network / Lan%></legend>
+			<%
+			local uci = luci.model.uci.cursor()
+			local ipaddr
+			uci:load("network")
+			ipaddr=uci:get("network","lan","ipaddr")
+			%>
+			<div class="cbi-value" id="cbi-fastmode-key"><label class="cbi-value-title" for="cbid.fastmode.ipaddr"><%:IP Addresses%></label>
+			<div class="cbi-value-field">
+				<input type="text" class="cbi-input-text" onchange="cbi_d_update(this.id)" name="cbid.fastmode.ipaddr" id="cbid.fastmode.ipaddr" value="<%=ipaddr%>" />
+			</div>
+			</div>
+
+			<input type="hidden" class="cbi-input-text" onchange="cbi_d_update(this.id)" name="cbid.fastmode.wds" id="cbid.fastmode.wds" value="1" />
+			
+			<br />
+			<br /><br />
+		</fieldset>
+
+		<fieldset class="cbi-section" id="cbi-wireless">
+			<legend><%:Wireless%></legend>
+			<%
+			local uci3 = luci.model.uci.cursor()
+			local ssid,encryption,key,channel,txpower
+		
+			uci3:load("wireless")
+		
+			ssid=uci3:get_first("wireless","wifi-iface","ssid")
+			encryption=uci3:get_first("wireless","wifi-iface","encryption")
+			key=uci3:get_first("wireless","wifi-iface","key")
+
+			channel=uci3:get_first("wireless","wifi-device","channel")
+			txpower=uci3:get_first("wireless","wifi-device","txpower") or 27
+
+			function default_sel_encryption(value)
+				local sel=nil;
+				if ( value == encryption ) then
+					sel = "\"selected\""
+				end 
+				return sel
+			end
+			function default_sel1_encryption(value)
+				local sel=nil;
+				if ( value == encryption ) then
+					sel = "selected="
+				end 
+				return sel
+			end
+			
+			function default_sel_txpower(value)
+				local sel=nil;
+				if ( value == txpower ) then
+					sel = "\"selected\""
+				end 
+				return sel
+			end
+			function default_sel1_txpower(value)
+				local sel=nil;
+				if ( value == txpower ) then
+					sel = "selected="
+				end 
+				return sel
+			end
+			%>
+		<br />
+		<div class="cbi-value" id="cbi-quickwifi-ssid"><label class="cbi-value-title" for="cbid.quickwifi.ssid"><%:SSID%></label>
+			<div class="cbi-value-field">
+			<input type="text" class="cbi-input-text" onchange="cbi_d_update(this.id)" name="cbid.quickwifi.ssid" id="cbid.quickwifi.ssid" value="<%=ssid%>" />
+			</div>
+		</div>
+
+		<div class="cbi-value" id="cbi-quickwifi-encryption"><label class="cbi-value-title" for="cbid.quickwifi.encryption"><%:encryption%></label>
+			<div class="cbi-value-field">
+
+			<select class="cbi-input-select" onchange="check_key()" id="cbid.quickwifi.encryption" name="cbid.quickwifi.encryption" size="1">
+			<option id="cbi-quickwifi-encryption-none" value="none"  <%=default_sel1_encryption("none")%><%=default_sel_encryption("none")%> ><%:none%></option>
+			<option id="cbi-quickwifi-encryption-psk" value="psk" <%=default_sel1_encryption("psk")%><%=default_sel_encryption("psk")%> ><%:WPA-PSK%></option>
+			<option id="cbi-quickwifi-encryption-psk2" value="psk-mixed" <%=default_sel1_encryption("psk-mixed")%><%=default_sel_encryption("psk-mixed")%> ><%:WPA-PSK/WPA2-PSK Mixed Mode%></option>
+			</select>
+
+			</div>
+		</div>
+
+		<div class="cbi-value" id="cbi-quickwifi-key"><label class="cbi-value-title" for="cbid.quickwifi.key"><%:Key%></label>
+			<div class="cbi-value-field">
+				<input type="password" class="cbi-input-text" onchange="cbi_d_update(this.id)" name="cbid.quickwifi.key" id="cbid.quickwifi.key" value="<%=key%>" />
+			</div>
+		</div>
+
+		<div class="cbi-value" id="cbi-quickwifi-show-key"><label class="cbi-value-title" for="cbid.quickwifi.show.key"><%:Show Password%></label>
+			<div class="cbi-value-field">
+				<input type="checkbox" class="cbi-input-text" onclick="var e = document.getElementById('cbid.quickwifi.key'); e.type = (e.type=='password') ? 'text' : 'password';" name="cbid.quickwifi.show.key" id="cbid.quickwifi.show.key" />
+			</div>
+		</div>
+
+		<script type="text/javascript">
+			function check_key(){
+				var cbi_encryption=document.getElementById("cbid.quickwifi.encryption");
+				var div_cbi_key=document.getElementById("cbi-quickwifi-key");
+				var div_cbi_show_key=document.getElementById("cbi-quickwifi-show-key");
+				if(cbi_encryption.options[cbi_encryption.selectedIndex].value=="none"){
+					div_cbi_key.style.display="none";
+					div_cbi_show_key.style.display="none";
+				}
+				else{
+					div_cbi_key.style.display="";
+					div_cbi_show_key.style.display="";
+				}
+			}
+			check_key();
+		</script>
+
+			<div class="cbi-value" id="cbi-wireless-radio0-channel"><label class="cbi-value-title" for="cbid.wireless.radio0.channel"><%:Channel%></label>
+			<div class="cbi-value-field">
+				<input type="text" class="cbi-input-text" onchange="cbi_d_update(this.id)" name="cbid.wireless.radio0.channel" id="cbid.wireless.radio0.channel" value="<%=channel%>" />
+				<script type="text/javascript">//<![CDATA[
+					cbi_combobox_init('cbid.wireless.radio0.channel', {"auto":"<%:auto%>","1":"1 (2.412 GHz)","2":"2 (2.417 GHz)","3":"3 (2.422 GHz)","4":"4 (2.427 GHz)","5":"5 (2.432 GHz)","6":"6 (2.437 GHz)","7":"7 (2.442 GHz)","8":"8 (2.447 GHz)","9":"9 (2.452 GHz)","10":"10 (2.457 GHz)","11":"11 (2.462 GHz)"}, '', '<%:-- custom --%>');
+				//]]></script>
+			</div>
+			</div>
+
+			<div class="cbi-value cbi-value-last" id="cbi-wireless-radio0-txpower"><label class="cbi-value-title" for="cbid.wireless.radio0.txpower"><%:Transmit Power%></label>
+		<div class="cbi-value-field">
+		<select class="cbi-input-select" onchange="cbi_d_update(this.id)" id="cbid.wireless.radio0.txpower" name="cbid.wireless.radio0.txpower" size="1">
+			<option id="cbi-wireless-radio0-txpower-0" value="0"  <%=default_sel1_txpower("0")%><%=default_sel_txpower("0")%> >0 dBm (1 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-4" value="4" <%=default_sel1_txpower("4")%><%=default_sel_txpower("4")%> >4 dBm (2 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-5" value="5" <%=default_sel1_txpower("5")%><%=default_sel_txpower("5")%> >5 dBm (3 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-7" value="7"  <%=default_sel1_txpower("7")%><%=default_sel_txpower("7")%>>7 dBm (5 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-8" value="8" <%=default_sel1_txpower("8")%><%=default_sel_txpower("8")%>>8 dBm (6 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-9" value="9"  <%=default_sel1_txpower("9")%><%=default_sel_txpower("9")%>>9 dBm (7 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-10" value="10"  <%=default_sel1_txpower("10")%><%=default_sel_txpower("10")%>>10 dBm (10 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-11" value="11"  <%=default_sel1_txpower("11")%><%=default_sel_txpower("11")%>>11 dBm (12 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-12" value="12"  <%=default_sel1_txpower("12")%><%=default_sel_txpower("12")%>>12 dBm (15 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-13" value="13" <%=default_sel1_txpower("13")%><%=default_sel_txpower("13")%>>13 dBm (19 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-14" value="14" <%=default_sel1_txpower("14")%><%=default_sel_txpower("14")%>>14 dBm (25 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-15" value="15" <%=default_sel1_txpower("15")%><%=default_sel_txpower("15")%>>15 dBm (31 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-16" value="16" <%=default_sel1_txpower("16")%><%=default_sel_txpower("16")%>>16 dBm (39 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-17" value="17" <%=default_sel1_txpower("17")%><%=default_sel_txpower("17")%>>17 dBm (50 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-18" value="18" <%=default_sel1_txpower("18")%><%=default_sel_txpower("18")%>>18 dBm (63 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-19" value="19" <%=default_sel1_txpower("19")%><%=default_sel_txpower("19")%>>19 dBm (79 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-20" value="20" <%=default_sel1_txpower("20")%><%=default_sel_txpower("20")%>>20 dBm (100 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-21" value="21" <%=default_sel1_txpower("21")%><%=default_sel_txpower("21")%>>21 dBm (125 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-22" value="22" <%=default_sel1_txpower("22")%><%=default_sel_txpower("22")%>>22 dBm (158 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-23" value="23" <%=default_sel1_txpower("23")%><%=default_sel_txpower("23")%>>23 dBm (199 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-24" value="24" <%=default_sel1_txpower("24")%><%=default_sel_txpower("24")%>>24 dBm (251 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-25" value="25" <%=default_sel1_txpower("25")%><%=default_sel_txpower("25")%>>25 dBm (316 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-26" value="26" <%=default_sel1_txpower("26")%><%=default_sel_txpower("26")%>>26 dBm (398 mW)</option>
+			<option id="cbi-wireless-radio0-txpower-27" value="27" <%=default_sel1_txpower("27")%><%=default_sel_txpower("27")%>>27 dBm (501 mW)</option>
+		</select>
+
+		<br />
+			<div class="cbi-value-description">
+				<span class="cbi-value-helpicon"><img src="/luci-static/resources/cbi/help.gif" alt="<%:help%>" /></span>
+				dBm
+			</div></div></div>
+			<br />
+			<br /><br />
+		</fieldset>
+		<input class="cbi-button cbi-button-apply" type="submit" name="cbi.apply" value="<%:Save & Apply%>" />
+		<input class="cbi-button cbi-button-reset" type="reset" value="<%:Reset%>" />
+		<br />	
+		<script type="text/javascript">cbi_d_update();</script>
+	</div>
+</form>
+<%+footer%>

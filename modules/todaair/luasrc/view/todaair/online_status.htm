@@ -1,0 +1,282 @@
+<%
+	require "luci.fs"
+	require "luci.tools.status"
+
+	local has_ipv6 = luci.fs.access("/proc/net/ipv6_route")
+	local has_dhcp = luci.fs.access("/etc/config/dhcp")
+	local has_wifi = luci.fs.stat("/etc/config/wireless")
+	      has_wifi = has_wifi and has_wifi.size > 0
+
+	if luci.http.formvalue("status") == "1" then
+		local ntm = require "luci.model.network".init()
+		local wan = ntm:get_wannet()
+		local wan6 = ntm:get_wan6net()
+
+		local _, _, memtotal, memcached, membuffers, memfree = luci.sys.sysinfo()
+
+		local conn_count = tonumber((
+			luci.sys.exec("wc -l /proc/net/nf_conntrack") or
+			luci.sys.exec("wc -l /proc/net/ip_conntrack") or
+			""):match("%d+")) or 0
+
+		local conn_max = tonumber((
+			luci.sys.exec("sysctl net.nf_conntrack_max") or
+			luci.sys.exec("sysctl net.ipv4.netfilter.ip_conntrack_max") or
+			""):match("%d+")) or 4096
+
+		local rv = {
+			uptime     = luci.sys.uptime(),
+			localtime  = os.date(),
+			loadavg    = { luci.sys.loadavg() },
+			memtotal   = memtotal,
+			memcached  = memcached,
+			membuffers = membuffers,
+			memfree    = memfree,
+			connmax    = conn_max,
+			conncount  = conn_count,
+			leases     = luci.tools.status.dhcp_leases(),
+			leases6    = luci.tools.status.dhcp6_leases(),
+			wifinets   = luci.tools.status.wifi_networks()
+		}
+
+		if wan then
+			rv.wan = {
+				ipaddr  = wan:ipaddr(),
+				gwaddr  = wan:gwaddr(),
+				netmask = wan:netmask(),
+				dns     = wan:dnsaddrs(),
+				expires = wan:expires(),
+				uptime  = wan:uptime(),
+				proto   = wan:proto(),
+				ifname  = wan:ifname(),
+				link    = wan:adminlink()
+			}
+		end
+
+		if wan6 then
+			rv.wan6 = {
+				ip6addr = wan6:ip6addr(),
+				gw6addr = wan6:gw6addr(),
+				dns     = wan6:dns6addrs(),
+				uptime  = wan6:uptime(),
+				ifname  = wan6:ifname(),
+				link    = wan6:adminlink()
+			}
+		end
+
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(rv)
+
+		return
+	end
+
+	local system, model = luci.sys.sysinfo()
+%>
+<%
+require("luci.sys")
+local load1, load5, load15 = luci.sys.loadavg()
+
+local hostname = require("luci.sys").hostname()
+local crequest = luci.dispatcher.context.request
+local request  = require("luci.dispatcher").context.path
+local category = request[1]
+local tree     = luci.dispatcher.node()
+local cattree  = category and luci.dispatcher.node(category)
+local node     = luci.dispatcher.context.dispatched
+
+local c = tree
+for i,r in ipairs(request) do
+	if c.nodes and c.nodes[r] then
+		c = c.nodes[r]
+		c._menu_selected = true
+	end
+end
+
+require("luci.i18n").loadc("base")
+require("luci.http").prepare_content("application/xhtml+xml")
+
+-%>
+
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<%=luci.i18n.context.lang%>" lang="<%=luci.i18n.context.lang%>">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<link rel="stylesheet" type="text/css" media="screen" href="<%=media%>/cascade.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="<%=media%>/dashboard.css" />
+<!--[if IE 6]><link rel="stylesheet" type="text/css" media="screen" href="<%=media%>/ie6.css" /><![endif]-->
+<!--[if IE 7]><link rel="stylesheet" type="text/css" media="screen" href="<%=media%>/ie7.css" /><![endif]-->
+<!--[if IE 8]><link rel="stylesheet" type="text/css" media="screen" href="<%=media%>/ie8.css" /><![endif]-->
+<% if node and node.css then %><link rel="stylesheet" type="text/css" media="screen" href="<%=resource%>/<%=node.css%>" />
+<% end -%>
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<title><%=striptags( hostname .. ( (node and node.title) and ' - ' .. translate(node.title) or '')) %> - LuCI</title>
+</head>
+<body class="lang_<%=luci.i18n.context.lang%>">
+<div id="screen">
+<div id="maincontent" style="margin-top:20px">
+
+
+
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">
+	function progressbar(v, m)
+	{
+		var vn = parseInt(v) || 0;
+		var mn = parseInt(m) || 100;
+		var pc = Math.floor((100 / mn) * vn);
+
+		return String.format(
+			'<div style="width:200px; position:relative; border:1px solid #999999">' +
+				'<div style="background-color:#CCCCCC; width:%d%%; height:15px">' +
+					'<div style="position:absolute; left:0; top:0; text-align:center; width:100%%; color:#000000">' +
+						'<small>%s / %s (%d%%)</small>' +
+					'</div>' +
+				'</div>' +
+			'</div>', pc, v, m, pc
+		);
+	}
+
+	var wifidevs = <%=luci.http.write_json(netdevs)%>;
+	var arptable = <%=luci.http.write_json(arpcache)%>;
+
+	XHR.poll(5, '<%=REQUEST_URI%>', { status: 1 },
+		function(x, info)
+		{
+
+
+			<% if has_dhcp then %>
+
+			var ls = document.getElementById('lease_status_table');
+			if (ls)
+			{
+				/* clear all rows */
+				while( ls.rows.length > 1 )
+					ls.rows[0].parentNode.deleteRow(1);
+
+				for( var i = 0; i < info.leases.length; i++ )
+				{
+					var timestr;
+
+					if (info.leases[i].expires <= 0)
+						timestr = '<em><%:expired%></em>';
+					else
+						timestr = String.format('%t', info.leases[i].expires);
+
+					var tr = ls.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row cbi-rowstyle-' + ((i % 2) + 1);
+
+					tr.insertCell(-1).innerHTML = info.leases[i].hostname ? info.leases[i].hostname : '?';
+					tr.insertCell(-1).innerHTML = info.leases[i].ipaddr;
+					tr.insertCell(-1).innerHTML = info.leases[i].macaddr;
+					tr.insertCell(-1).innerHTML = timestr;
+				}
+
+				if( ls.rows.length == 1 )
+				{
+					var tr = ls.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row';
+
+					var td = tr.insertCell(-1);
+						td.colSpan = 4;
+						td.innerHTML = '<em><br /><%:There are no active leases.%></em>';
+				}
+			}
+
+			var ls6 = document.getElementById('lease6_status_table');
+			if (ls6 && info.leases6)
+			{
+				ls6.parentNode.style.display = 'block';
+
+				/* clear all rows */
+				while( ls6.rows.length > 1 )
+					ls6.rows[0].parentNode.deleteRow(1);
+
+				for( var i = 0; i < info.leases6.length; i++ )
+				{
+					var timestr;
+
+					if (info.leases6[i].expires <= 0)
+						timestr = '<em><%:expired%></em>';
+					else
+						timestr = String.format('%t', info.leases6[i].expires);
+
+					var tr = ls6.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row cbi-rowstyle-' + ((i % 2) + 1);
+
+					tr.insertCell(-1).innerHTML = info.leases6[i].hostname ? info.leases6[i].hostname : '?';
+					tr.insertCell(-1).innerHTML = info.leases6[i].ip6addr;
+					tr.insertCell(-1).innerHTML = info.leases6[i].duid;
+					tr.insertCell(-1).innerHTML = timestr;
+				}
+
+				if( ls6.rows.length == 1 )
+				{
+					var tr = ls6.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row';
+
+					var td = tr.insertCell(-1);
+						td.colSpan = 4;
+						td.innerHTML = '<em><br /><%:There are no active leases.%></em>';
+				}
+			}
+			<% end %>
+
+
+		}
+	);
+</script>
+<% if has_dhcp then %>
+<fieldset class="cbi-section">
+	<legend><%:Online IP%></legend>
+
+	<table class="cbi-section-table" id="lease_status_table">
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell"><%:Hostname%></th>
+			<th class="cbi-section-table-cell"><%:IPv4-Address%></th>
+			<th class="cbi-section-table-cell"><%:MAC-Address%></th>
+			<th class="cbi-section-table-cell"><%:Leasetime remaining%></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td colspan="4"><em><br /><%:Collecting data...%></em></td>
+		</tr>
+	</table>
+</fieldset>
+
+<fieldset class="cbi-section" style="display:none">
+	<legend><%:DHCPv6 Leases%></legend>
+
+	<table class="cbi-section-table" id="lease6_status_table">
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell"><%:Hostname%></th>
+			<th class="cbi-section-table-cell"><%:IPv6-Address%></th>
+			<th class="cbi-section-table-cell"><%:DUID%></th>
+			<th class="cbi-section-table-cell"><%:Leasetime remaining%></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td colspan="4"><em><br /><%:Collecting data...%></em></td>
+		</tr>
+	</table>
+</fieldset>
+<% end %>
+
+
+
+<%-
+	require "luci.util"
+	require "nixio.fs"
+
+	local plugins = nixio.fs.dir(luci.util.libpath() .. "/view/admin_status/index")
+	if plugins then
+		local inc
+		for inc in plugins do
+			if inc:match("%.htm$") then
+				include("admin_status/index/" .. inc:gsub("%.htm$", ""))
+			end
+		end
+	end
+-%>
+
+<%+footer%>

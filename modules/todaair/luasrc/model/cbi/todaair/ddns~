@@ -1,0 +1,6 @@
+
+
+config "myddns"
+	option name		"abwbw"
+
+

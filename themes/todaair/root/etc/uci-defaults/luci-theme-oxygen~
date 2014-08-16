@@ -1,0 +1,6 @@
+#!/bin/sh
+uci batch <<-EOF
+	set luci.themes.oxygen=/luci-static/oxygen
+        commit luci
+EOF
+	

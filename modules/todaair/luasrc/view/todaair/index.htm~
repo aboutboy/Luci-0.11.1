@@ -1,0 +1,302 @@
+<%+indexheader%>
+
+<%-
+	local ntm = require "luci.model.network".init()
+	local fwm = require "luci.model.firewall".init()
+
+	local net
+	local ifaces = { }
+	local netlist = { }
+	for _, net in ipairs(ntm:get_networks()) do
+		if net:name() ~= "loopback" then
+			local z = fwm:get_zone_by_network(net:name())
+			ifaces[#ifaces+1] = net:name()
+			netlist[#netlist+1] = {
+				net:name(), z and z:name() or "-", z
+			}
+		end
+	end
+
+	table.sort(netlist,
+		function(a, b)
+			if a[2] ~= b[2] then
+				return a[2] < b[2]
+			else
+				return a[1] < b[1]
+			end
+		end)
+-%>
+
+<script type="text/javascript">//<![CDATA[
+	XHR.poll(5, '<%=REQUEST_URI%>', { status: 1 },
+		function(x, info){
+		}
+	);
+//]]></script>
+<link rel="stylesheet" href="<%=resource %>/css/index.css" type="text/css"/>
+<link rel="stylesheet" href="<%=media %>/default.css" type="text/css"/>
+
+
+  <div class="main">
+
+    <div class="cloud-plug-in ">
+	  <a id="cloud-plug-in" class="function" href="#">
+	    <span class="icon"></span>
+		<span class="text"><%:Cloud Plug-in%></span>
+	  </a>
+	</div>
+	<div class="wifi">
+	  <a id="wifi" class="function" href="#">
+	    <span class="icon"></span>
+		<span class="text"><%:Wifi Settings%></span>
+	  </a>
+	</div>
+	<div  class="settingwizard">
+	  <a id="settingwizard" class="function" href="#">
+	    <span class="icon"></span>
+		<span class="text"><%:Setting Wizard%></span>
+	  </a>
+	</div>
+	<div class="advancedsettings">
+	  <a id="advancedsettings" class="function" href="#">
+	    <span class="icon"></span>
+		<span class="text"><%:Advanced Settings%></span>
+	  </a>
+	</div>
+	<div class="wlan-eth-light">
+	<span id="wan0" class="offline"></span>
+	</div>
+	<div id="lan" class="lan-eth-light">
+	<span id="lan0" class="offline"></span>
+	<span id="lan1" class="offline"></span>
+	</div>
+	<a id="restart" class="restart">
+	<span><%:Restart%></span>
+	</a>
+	<a id="on-off" class="wifi-on" style="cursor:pointer">
+	<span id="status" active="false"><%:Loading%>...</span>
+	</a>
+	<a id="onlinestatus" class="line-on-info" style="text-align:center;color:white;font-size:14px;padding-top:3px;cursor:pointer"><span><span id="onlineNum" style="color:red">- </span>&nbsp;&nbsp;<%:IP online  %></span>
+	</a>
+  </div>
+<%+indexfooter%>
+<script type="text/javascript" >
+var toggle=document.getElementById("on-off");
+var togglespan=document.getElementById("status");
+window.onload=function () {
+	cloudclick();
+	wificlick();
+	settingwizardclick();
+	advancedsettingsclick();
+	changePwd();
+	sysStatus();
+	restartclick();
+	on_offclick();
+	get_online_number();
+	onlinestatusclick();
+	get_wlan_status();
+}
+function get_wlan_status(){
+	XHR.poll(2, '<%=luci.dispatcher.build_url("admin", "network", "iface_status", table.concat(ifaces, ","))%>', null,
+		function(x, ifcs){
+			wan=document.getElementById("wan0");
+			lan=document.getElementById("lan").getElementsByTagName("span");
+			if (ifcs)
+			{
+
+				var lansign=0;
+				for (var idx = 0; idx < ifcs.length; idx++)
+				{
+
+					var ifc = ifcs[idx];
+					if (ifc.id=="lan")
+					{
+
+						for(var i=0;i<lan.length;i++){
+
+							if("lan"+lansign==lan[i].id){
+								if(ifc.is_up==true){
+									lan[i].className="online";
+		
+								}
+								else
+								if(ifc.is_up==false){
+									lan[i].className="offline";
+
+								}
+								break;
+							}
+						}
+
+					}
+					if(ifc.id=="wan"){
+	
+						if(ifc.is_up==true){
+							wan.className="online";
+
+						}
+						else
+						if(ifc.is_up==false){
+							wan.className="offline";
+
+						}
+					}
+	
+
+				}
+			}
+
+		});
+}
+
+function get_online_number(){
+
+	XHR.get('<%=controller%>/admin/online_status', { status: 1 },
+		function(x, info){
+			var onlineNum=document.getElementById("onlineNum");
+			var online_number=0;
+			if(info.leases!=undefined && info.leases.length != undefined){
+			online_number=online_number+info.leases.length;
+			}
+			if(info.leases6!=undefined && info.leases6.length != undefined){
+			online_number=online_number+info.leases6.length;
+			}
+			
+
+			onlineNum.innerHTML=online_number;
+
+		});
+	XHR.poll(4, '<%=controller%>/admin/online_status', { status: 1 },
+		function(x, info){
+			var onlineNum=document.getElementById("onlineNum");
+			var online_number=0;
+			if(info.leases!=undefined && info.leases.length != undefined){
+			online_number=online_number+info.leases.length;
+			}
+			if(info.leases6!=undefined && info.leases6.length != undefined){
+			online_number=online_number+info.leases6.length;
+			}
+			
+
+			onlineNum.innerHTML=online_number;
+
+		});
+    
+
+}
+function system_reboot(){
+	var value;
+	art.dialog({
+		title:'<%:Restart%>',
+		ok:function(){
+ 		value=XHR.get('<%=luci.dispatcher.build_url("admin", "system_reboot")%>',null,function (){})
+	},
+	content:'<%:Confirm restart%>?',
+	cancelVal:'<%:Cancel%>',
+	cancel:true,
+	lock:true
+});
+}
+function onlinestatusclick(){
+	document.getElementById("onlinestatus").onclick=function (){
+		art.dialog.open('<%=REQUEST_URI%>/admin/online_status/', { id: 'memdiv', width: 600, height: 520, title: '<%:IP online info%>',lock:true,drag:false });
+	};
+}
+function cloudclick(){
+	document.getElementById("cloud-plug-in").onclick=function (){
+		art.dialog.open('<%=REQUEST_URI%>/admin/system/packages/', { id: 'memdiv', width: 900, height: 570, title: '<%:Cloud Plug-in%>',lock:true,drag:false });
+	};
+}
+function wificlick(){
+	document.getElementById("wifi").onclick=function (){
+		art.dialog.open('<%=REQUEST_URI%>/admin/wireless', { id: 'memdiv', width: 600, height: 520, title: '<%:Wifi Settings%>',lock:true });
+	};
+}
+function settingwizardclick(){
+	document.getElementById("settingwizard").onclick=function (){
+		art.dialog.open('<%=controller%>/admin/guide', { id: 'memdiv', width: 600, height: 520, title: '<%:Network Settings%>',lock:true });
+	};
+}
+function advancedsettingsclick(){
+	document.getElementById("advancedsettings").onclick=function (){
+		art.dialog.open('<%=controller%>/admin/list', { id: 'memdiv', width: 900, height: 570, title: '<%:Advanced Settings%>',lock:true });
+	};
+}
+function restartclick(){
+	document.getElementById("restart").onclick=function (){
+		system_reboot();
+	};
+}
+function on_offclick(){
+	document.getElementById("on-off").onclick=function (){
+		wifi_shutdown();
+	};
+}
+</script>
+
+<%
+	local uci_status = luci.model.uci.cursor()
+	local disabled
+	uci_status:load("wireless")
+	disabled=uci_status:get_first("wireless","wifi-device","disabled") or uci_status:get_first("wireless","wifi-iface","disabled") or 0
+%>
+
+<script type="text/javascript">//<![CDATA[
+	if(<%=disabled%> == 0){
+		toggle.className = 'wifi-on';
+		toggle.title = '<%:Shutdown this network%>';
+		togglespan.innerText="<%:Wifi%>:<%:on %>";
+	}
+	else{
+		toggle.className = 'wifi-off';
+		toggle.title = '<%:Activate this network%>';
+		togglespan.innerText="<%:Wifi%>:<%:off%>";
+	}
+	toggle.setAttribute('active', <%=disabled%> == 0 ? true : false);
+
+	var wifidevs = <%=luci.http.write_json(netdevs)%>;
+	var arptable = <%=luci.http.write_json(arpcache)%>;
+
+	var is_reconnecting = false;
+	var reconnect = (toggle.getAttribute('active') == 'false');
+	function nowrap(s) {
+		return s.replace(/ /g, '&#160;');
+	}
+	function tips(){
+		return confirm('<%:Really shutdown network ?\nYou might lose access to this device if you are connected via this interface.%>');
+	}
+	function wifi_shutdown() {
+		var id="radio0.network1"
+		if (!reconnect && !tips())
+			return;
+		var dialog=art.dialog({
+			title:"<%:Loading%>",
+			content:"<%:Wifi state changes, please later%>...",
+			lock:true,
+			cancel:false
+		});
+		XHR.get('<%=luci.dispatcher.build_url("admin", "network")%>/wireless_' + (reconnect ? 'reconnect' : 'shutdown') + '/' + id, null,
+			function(x)
+			{
+				if(!reconnect)
+				{
+					toggle.className = 'wifi-off';
+					toggle.title = '<%:Activate this network%>';
+					togglespan.innerText="<%:Wifi%>:<%:off%>";
+				}
+				else
+				{
+					toggle.className = 'wifi-on';
+					toggle.title = '<%:Shutdown this network%>';
+					togglespan.innerText="<%:Wifi%>:<%:on %>";
+
+				}
+				reconnect = !reconnect;
+				dialog.close();
+			}
+		);
+	};
+//]]></script>
+
+
+
