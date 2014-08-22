@@ -1,6 +1,0 @@
-#!/bin/sh
-uci batch <<-EOF
-	set luci.themes.toddair=/luci-static/todaair
-        commit luci
-EOF
-	
